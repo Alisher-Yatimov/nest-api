@@ -1,8 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectModel } from '@nestjs/sequelize';
 import { CreateUserDto } from 'src/users/dto/create-user-dto';
-import { User } from 'src/users/users.model';
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcryptjs';
 
@@ -19,31 +17,42 @@ export class AuthService {
   }
 
   private async validateUser(userDto: CreateUserDto) {
-    const user = await this.userService.getUserByEmail(userDto.email);
-    const passwordEquals = await bcrypt.compare(
-      userDto.password,
-      user.password,
-    );
-    if (user && passwordEquals) {
-      return user;
+    try {
+      const user = await this.userService.getUserByEmail(userDto.email);
+      const passwordEquals = await bcrypt.compare(
+        userDto.password,
+        user.password,
+      );
+      if (user && passwordEquals) {
+        return user;
+      }
+      throw new HttpException(
+        'wrong email or password',
+        HttpStatus.BAD_REQUEST,
+      );
+    } catch (error) {
+      throw new HttpException(
+        'wrong email or password',
+        HttpStatus.BAD_REQUEST,
+      );
     }
-    throw new HttpException('wrong email or password', HttpStatus.BAD_REQUEST);
   }
 
   async registration(userDto: CreateUserDto) {
     const candidate = await this.userService.getUserByEmail(userDto.email);
     if (candidate) {
       throw new HttpException(
-        `email: ${userDto} is already exist`,
+        `email: ${userDto.email} is already exist`,
         HttpStatus.BAD_REQUEST,
       );
+    } else {
+      const hashPassword = await bcrypt.hash(userDto.password, 8);
+      const user = this.userService.createUser({
+        ...userDto,
+        password: hashPassword,
+      });
+      return this.generateToken(user);
     }
-    const hashPassword = await bcrypt.hash(userDto.password, 8);
-    const user = this.userService.createUser({
-      ...userDto,
-      password: hashPassword,
-    });
-    return this.generateToken(user);
   }
 
   async generateToken(user) {

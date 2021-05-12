@@ -30,5 +30,5 @@ export class User extends Model<User, UserCreationAttrs> {
   password: string;
 
   @HasMany(() => Todo)
-  todos: Todo[]
+  todos: Todo[];
 }

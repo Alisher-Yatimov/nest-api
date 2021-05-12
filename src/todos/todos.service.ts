@@ -13,8 +13,8 @@ export class TodosService {
     return todo;
   }
 
-  async getAllTodo() {
-    const todos = await this.todoRepository.findAll();
+  async getAllTodo(userId: number) {
+    const todos = await this.todoRepository.findAll({ where: { userId } });
     return todos;
   }
 
